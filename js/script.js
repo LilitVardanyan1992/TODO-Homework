@@ -7,33 +7,41 @@
 // 4․ Նույնը փորձում եք TS-ով
 
 window.addEventListener("load", () => {
-	const todoForm = document.querySelector("#todo-form form");
-	const todoList = document.querySelector("#todo-list");
-	const todoBottom = document.querySelector("#todo-bottom");
-	let i = 0;
+    const todoForm = document.querySelector("#todo-form form");
+    const todoList = document.querySelector("#todo-list");
+    const todoBottom = document.querySelector("#todo-bottom");
+    const clearFinishedTodos = todoBottom.querySelector(
+        "[data-clear-all-finished]"
+    );
 
-	const data = [];
+    let i = 0;
 
-	todoForm.addEventListener("submit", (e) => {
-		e.preventDefault();
-		const value = e.target.firstElementChild.value;
+    let data = [];
 
-		if (value !== "") {
-			data.push({
-				id: i, text: value, isCompleted: false
-			});
-			i++;
-			e.target.reset();
-			todoList.innerHTML = "";
-			createTodoListItem(data);
-			checkTodoListItemsLength(data);
-		}
-	});
+    todoForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const value = e.target.firstElementChild.value;
 
-	function createTodoListItem(data) {
-		for (let i = 0; i < data.length; i++) {
-			const { id, text, isCompleted } = data[i];
-			todoList.innerHTML += `
+        if (value !== "") {
+            data.push({
+                id: i,
+                text: value,
+                isCompleted: false,
+            });
+            i++;
+            e.target.reset();
+            todoList.innerHTML = "";
+            createTodoListItem(data);
+            checkTodoListItemsLength(data);
+        }
+    });
+
+    clearFinishedTodos.addEventListener("click", clearAllfinished);
+
+    function createTodoListItem(data) {
+        for (let i = 0; i < data.length; i++) {
+            const { id, text, isCompleted } = data[i];
+            todoList.innerHTML += `
 				<div
 					class="todo-list-item"
 					data-id=${id}
@@ -50,37 +58,56 @@ window.addEventListener("load", () => {
 				</div>
 			`;
 
-			removeTodoListItem(document.querySelectorAll("[data-rm]"));
-			checkTodoListItemsCompleted(document.querySelectorAll("[data-completed]"));
-		}
-	}
+            removeTodoListItem(document.querySelectorAll("[data-rm]"));
+            checkTodoListItemsCompleted(
+                document.querySelectorAll("[data-completed]")
+            );
+        }
+    }
 
-	function removeTodoListItem(removeBtnArr) {
-		for (let x = 0; x < removeBtnArr.length; x++) {
-			removeBtnArr[x].addEventListener("click", () => {
-				if (parseInt(removeBtnArr[x].parentElement.dataset.id) === x) {
-					removeBtnArr[x].parentElement.remove();
-				}
-			});
-		}
-	}
+    function removeTodoListItem(removeBtnArr) {
+        for (let x = 0; x < removeBtnArr.length; x++) {
+            removeBtnArr[x].addEventListener("click", () => {
+                if (parseInt(removeBtnArr[x].parentElement.dataset.id) === x) {
+                    removeBtnArr[x].parentElement.remove();
+                    data.splice(x, 1);
+                }
+            });
+        }
+    }
 
-	function checkTodoListItemsLength(data) {
-		todoBottom.querySelector("#all_todos_count").textContent = data.length;
-	}
+    function checkTodoListItemsLength(data) {
+        todoBottom.querySelector("#all_todos_count").textContent = data.length;
+    }
 
-	function checkTodoListItemsCompleted(checkboxInputsArr) {
-		checkboxInputsArr.forEach((input, index) => {
-			input.addEventListener("change", (e) => {
-				if (e.target.checked) {
-					data[index].isCompleted = true;
-				} else {
-					data[index].isCompleted = false;
-				}
+    function checkTodoListItemsCompleted(checkboxInputsArr) {
+        checkboxInputsArr.forEach((input, index) => {
+            input.addEventListener("change", (e) => {
+                if (e.target.checked) {
+                    data[index].isCompleted = true;
+                    console.log(data);
+                } else {
+                    data[index].isCompleted = false;
+                    console.log(data);
+                }
 
-				const count = data.filter(object => object.isCompleted).length;
-				todoBottom.querySelector("#finished_todos_count").textContent = count;
-			});
-		});
-	}
+                const count = data.filter(
+                    (object) => object.isCompleted
+                ).length;
+                todoBottom.querySelector("#finished_todos_count").textContent =
+                    count;
+            });
+        });
+    }
+
+    function clearAllfinished() {
+        console.log(data);
+        const filteredData = data.filter((todo) => !todo.isCompleted);
+        data = filteredData;
+
+        todoList.innerHTML = "";
+        document.querySelector("#finished_todos_count").textContent = 0;
+        createTodoListItem(data);
+        checkTodoListItemsLength(data);
+    }
 });
