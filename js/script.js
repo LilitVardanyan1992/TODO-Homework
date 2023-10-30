@@ -24,11 +24,11 @@ window.addEventListener("load", () => {
 
         if (value !== "") {
             data.push({
-                id: i,
+                id: data.length === 0 ? 0 : i,
                 text: value,
                 isCompleted: false,
             });
-            i++;
+            data[0].id === 0 && data.length === 1 ? (i = 0) : i++;
             e.target.reset();
             todoList.innerHTML = "";
             createTodoListItem(data);
@@ -68,9 +68,16 @@ window.addEventListener("load", () => {
     function removeTodoListItem(removeBtnArr) {
         for (let x = 0; x < removeBtnArr.length; x++) {
             removeBtnArr[x].addEventListener("click", () => {
-                if (parseInt(removeBtnArr[x].parentElement.dataset.id) === x) {
+                const itemId = parseInt(
+                    removeBtnArr[x].parentElement.dataset.id
+                );
+                const dataIndex = data.findIndex((item) => item.id === itemId);
+
+                if (dataIndex !== -1) {
                     removeBtnArr[x].parentElement.remove();
-                    data.splice(x, 1);
+                    data.splice(dataIndex, 1);
+                    checkTodoListItemsLength(data);
+                    checkTodoListItemsLengthforComleted(data);
                 }
             });
         }
