@@ -1,12 +1,6 @@
 "use strict";
 
-// TASKS
-// 1. Լուծում եք ID-ների խնդիրը
-// 2․ Լուծում եք clearAll Finished-ի խնդիրը
-// 3․ լուծում եք localStorage—ի խնդիրը
-// 4․ Նույնը փորձում եք TS-ով
-
-window.addEventListener("load", () => {
+document.addEventListener("DOMContentLoaded", () => {
     const todoForm = document.querySelector("#todo-form form");
     const todoList = document.querySelector("#todo-list");
     const todoBottom = document.querySelector("#todo-bottom");
@@ -14,107 +8,117 @@ window.addEventListener("load", () => {
         "[data-clear-all-finished]"
     );
 
-    let i = 0;
-
     let data = [];
 
     todoForm.addEventListener("submit", (e) => {
         e.preventDefault();
         const value = e.target.firstElementChild.value;
-
-        if (value !== "") {
-            data.push({
-                id: data.length === 0 ? 0 : i,
-                text: value,
-                isCompleted: false,
-            });
-            data[0].id === 0 && data.length === 1 ? (i = 0) : i++;
-            e.target.reset();
-            todoList.innerHTML = "";
-            createTodoListItem(data);
-            checkTodoListItemsLength(data);
-        }
+        todoList.append(createSingleTodoComponent(value));
+        e.target.reset();
     });
 
     clearFinishedTodos.addEventListener("click", clearAllfinished);
 
-    function createTodoListItem(data) {
-        for (let i = 0; i < data.length; i++) {
-            const { id, text, isCompleted } = data[i];
-            todoList.innerHTML += `
-				<div
-					class="todo-list-item"
-					data-id=${id}
-				>
-					<label>
-						<input
-							type="checkbox"
-							${isCompleted ? "checked" : ""}
-							data-completed
-						>
-						<span>${text}</span>
-					</label>
-					<button data-rm>Remove</button>
-				</div>
-			`;
+    function createSingleTodoComponent(text) {
+        const id = crypto.randomUUID();
 
-            removeTodoListItem(document.querySelectorAll("[data-rm]"));
-            checkTodoListItemsCompleted(
-                document.querySelectorAll("[data-completed]")
-            );
+        const singleTodo = {
+            id,
+            text,
+            isCompleted: false,
+        };
+        data.push(singleTodo);
+
+        const singleTodoElement = document.createElement("div");
+        singleTodoElement.classList.add("todo-list-item");
+        singleTodoElement.setAttribute("data-id", `${id}`);
+
+        singleTodoElement.innerHTML = `
+                <label>
+                    <input
+                        type="checkbox"
+                        ${singleTodo.isCompleted ? "checked" : ""}
+                        data-completed
+                    >
+                    <span>${text}</span>
+                </label>
+                <button class="remove-single-todo" data-rm=${id}>Remove</button>
+            `;
+
+        const checkboxInput = singleTodoElement.querySelector(
+            "input[type=checkbox][data-completed]"
+        );
+        if (checkboxInput) {
+            checkTodoListItemsCompleted(checkboxInput, id);
         }
+
+        removeTodoListItem(singleTodoElement);
+        updateState();
+
+        return singleTodoElement;
     }
 
-    function removeTodoListItem(removeBtnArr) {
-        for (let x = 0; x < removeBtnArr.length; x++) {
-            removeBtnArr[x].addEventListener("click", () => {
-                const itemId = parseInt(
-                    removeBtnArr[x].parentElement.dataset.id
-                );
-                const dataIndex = data.findIndex((item) => item.id === itemId);
-
-                if (dataIndex !== -1) {
-                    removeBtnArr[x].parentElement.remove();
-                    data.splice(dataIndex, 1);
-                    checkTodoListItemsLength(data);
-                    checkTodoListItemsLengthforComleted(data);
-                }
-            });
-        }
-    }
-
-    function checkTodoListItemsLength(data) {
+    function updateState() {
         todoBottom.querySelector("#all_todos_count").textContent = data.length;
+        todoBottom.querySelector("#finished_todos_count").textContent =
+            data.filter((object) => object.isCompleted).length;
     }
 
-    function checkTodoListItemsCompleted(checkboxInputsArr) {
-        checkboxInputsArr.forEach((input, index) => {
-            input.addEventListener("change", (e) => {
-                if (e.target.checked) {
-                    data[index].isCompleted = true;
-                    console.log(data);
-                } else {
-                    data[index].isCompleted = false;
-                    console.log(data);
-                }
+    function removeTodoListItem(element) {
+        element.addEventListener("click", (e) => {
+            if (e.target.matches(".remove-single-todo")) {
+                let itemId = e.target.dataset.rm;
+                e.target.parentElement.remove();
 
-                const count = data.filter(
-                    (object) => object.isCompleted
-                ).length;
-                todoBottom.querySelector("#finished_todos_count").textContent =
-                    count;
-            });
+                data = data.filter((item) => item.id !== itemId);
+                updateState();
+            }
+        });
+    }
+
+    function checkTodoListItemsCompleted(checkboxInput) {
+        checkboxInput.addEventListener("change", (e) => {
+            const itemId = e.target.parentElement.parentElement.dataset.id;
+            const dataIndex = data.findIndex((item) => item.id === itemId);
+            const todoListItems = todoList.querySelectorAll(".todo-list-item");
+            let todoListItemIndex;
+
+            for (let i = 0; i < todoListItems.length; i++) {
+                if (todoListItems[i].dataset.id === itemId) {
+                    todoListItemIndex = i;
+                }
+            }
+
+            if (e.target.checked) {
+                data[dataIndex].isCompleted = true;
+                todoListItems[todoListItemIndex]
+                    .querySelector("input[type=checkbox][data-completed]")
+                    .setAttribute("checked", "checked");
+            } else {
+                data[dataIndex].isCompleted = false;
+                todoListItems[todoListItemIndex]
+                    .querySelector("input[type=checkbox][data-completed]")
+                    .removeAttribute("checked");
+            }
+
+            updateState();
         });
     }
 
     function clearAllfinished() {
-        console.log(data);
-        const filteredData = data.filter((todo) => !todo.isCompleted);
-        data = filteredData;
+        data = data.filter((todo) => !todo.isCompleted);
+        const todoListItems = todoList.querySelectorAll(".todo-list-item");
 
-        todoList.innerHTML = "";
-        document.querySelector("#finished_todos_count").textContent = 0;
-        createTodoListItem(data);
-        checkTodoListItemsLength(data);
+        for (let i = 0; i < todoListItems.length; i++) {
+            if (
+                todoListItems[i]
+                    .querySelector("input[type=checkbox][data-completed]")
+                    .hasAttribute("checked")
+            ) {
+                todoListItems[i].remove();
+            }
+        }
+
+        updateState();
     }
 });
